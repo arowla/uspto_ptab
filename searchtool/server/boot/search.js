@@ -4,6 +4,10 @@ exports.buildSearch = function (req, res) {
     var unirest  = require('unirest');
     var humanize = require('humanize');
     var paginate = require('nodejs-yapaginate/lib/main.js');
+
+    // number of records per page
+    var RECORDS_PER_PAGE = 20;
+
     /*
        example Payload of sessionCookie
        { ttl: '1209600',
@@ -41,18 +45,18 @@ exports.buildSearch = function (req, res) {
         q=req.query.q.toString();
     }
 
-    // Set Pagination to incremnt by 20 results
+    // Set Pagination to increment by RECORDS_PER_PAGE results
     var s = 0;
     var currentPage = 1;
     if (req.query.pageno && req.query.pageno > 0) {
-        s = (req.query.pageno -1) *20;
+        s = (req.query.pageno -1) * RECORDS_PER_PAGE;
         currentPage = parseInt(req.query.pageno) ;
     }
 
     q = q+dateRange;
 
     // Build Search .. if no page number set then only show
-    var SEARCH_URL = config.solrURI+'/oafiledatanew/select?q='+q+'&wt=json&indent=true&rows=20&start='+s+'&hl=true&hl.snippets=10&hl.fl=textdata&hl.fragsize=200&hl.simple.pre=<code>&hl.simple.post=</code>&hl.usePhraseHighlighter=true&q.op=AND&fl=appid,action_type,filename,minread,id,textdata';
+    var SEARCH_URL = config.solrURI+'/oafiledatanew/select?q='+q+'&wt=json&indent=true&rows='+RECORDS_PER_PAGE+'&start='+s+'&hl=true&hl.snippets=10&hl.fl=textdata&hl.fragsize=200&hl.simple.pre=<code>&hl.simple.post=</code>&hl.usePhraseHighlighter=true&q.op=AND&fl=appid,action_type,filename,minread,id,textdata';
 
     // Debug for logs
     console.log(SEARCH_URL);
@@ -67,7 +71,7 @@ exports.buildSearch = function (req, res) {
                 res.render('newview', {
                     result:body.response.docs,
                     total:humanize.numberFormat(body.response.numFound,0),
-                    pagein:paginate({totalItem:body.response.numFound, itemPerPage:20, currentPage:currentPage, url:'/newsearch',params:{q:q}}),
+                    pagein:paginate({totalItem:body.response.numFound, itemPerPage:RECORDS_PER_PAGE, currentPage:currentPage, url:'/newsearch',params:{q:q}}),
                     took:humanize.numberFormat(body.responseHeader.QTime,0 ),
                     highlighting:body.highlighting,
                     term:q
